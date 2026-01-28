@@ -6,40 +6,68 @@ Portable compose setup for deploying Overwatch MCP on any host.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/setup.sh | bash
-cd Overwatch_MCP
-nano .env          # Add your credentials
-nano config.yaml   # Adjust if needed
-docker compose up -d
 ```
+
+This creates `Overwatch_MCP/` with all files. Then configure and run manually.
 
 ## Manual Setup
 
 ```bash
-# Download files
 mkdir -p Overwatch_MCP && cd Overwatch_MCP
 curl -fsSLO https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/docker-compose.yml
 curl -fsSLO https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/.env.example
 curl -fsSLO https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/config.example.yaml
-
-# Create config from templates
 cp .env.example .env
 cp config.example.yaml config.yaml
+```
 
-# Edit with your values
-nano .env
-nano config.yaml
+## Configuration
 
-# Start
+1. **Edit `.env`** with your credentials:
+   ```bash
+   nano .env
+   ```
+
+2. **Edit `config.yaml`** to adjust:
+   - `allowed_buckets` for InfluxDB
+   - Time range limits
+   - Cache TTL
+
+## Running
+
+### For Claude Desktop (Interactive MCP)
+```bash
+docker compose run --rm overwatch-mcp
+```
+
+### As Background Service
+```bash
 docker compose up -d
 docker compose logs -f
 ```
 
-## Alternative: Copy from Repo
+## Port Override (Optional)
 
+MCP uses stdio by default. If you need to expose a port:
+
+### Via Command Line
 ```bash
-# If you have the repo cloned
-scp -r compose/ user@host:~/Overwatch_MCP/
-ssh user@host "cd ~/Overwatch_MCP && cp .env.example .env && cp config.example.yaml config.yaml"
+docker compose run --rm -p 8080:8080 overwatch-mcp
+```
+
+### Via docker-compose.yml
+Add to the service definition:
+```yaml
+services:
+  overwatch-mcp:
+    # ... existing config ...
+    ports:
+      - "8080:8080"
+```
+
+### Via Environment Variable
+```bash
+docker compose run --rm -p ${PORT:-8080}:8080 overwatch-mcp
 ```
 
 ## Files
@@ -47,12 +75,11 @@ ssh user@host "cd ~/Overwatch_MCP && cp .env.example .env && cp config.example.y
 | File | Purpose |
 |------|---------|
 | `docker-compose.yml` | Service definition |
-| `.env.example` | Environment template (copy to `.env`) |
-| `config.example.yaml` | Config template (copy to `config.yaml`) |
+| `.env.example` | Environment template → copy to `.env` |
+| `config.example.yaml` | Config template → copy to `config.yaml` |
+| `setup.sh` | One-line setup script |
 
 ## Claude Desktop Integration
-
-For Claude Desktop, the MCP server needs to run interactively (not as a daemon).
 
 Add to `~/.claude/config.json`:
 
@@ -62,25 +89,9 @@ Add to `~/.claude/config.json`:
     "overwatch": {
       "command": "docker",
       "args": [
-        "compose", "-f", "/path/to/compose/docker-compose.yml",
-        "run", "--rm", "-T", "overwatch-mcp"
-      ]
-    }
-  }
-}
-```
-
-Or use docker run directly:
-
-```json
-{
-  "mcpServers": {
-    "overwatch": {
-      "command": "docker",
-      "args": [
         "run", "--rm", "-i",
-        "-v", "/path/to/compose/config.yaml:/app/config/config.yaml:ro",
-        "--env-file", "/path/to/compose/.env",
+        "-v", "/path/to/Overwatch_MCP/config.yaml:/app/config/config.yaml:ro",
+        "--env-file", "/path/to/Overwatch_MCP/.env",
         "ghcr.io/malindarathnayake/overwatch-mcp:latest"
       ]
     }
@@ -88,10 +99,31 @@ Or use docker run directly:
 }
 ```
 
+## Network Options
+
+### Host Network (Linux only)
+Uncomment in `docker-compose.yml`:
+```yaml
+network_mode: host
+```
+
+### Docker Desktop (Mac/Windows)
+Use `host.docker.internal` for localhost services:
+```
+PROMETHEUS_URL=http://host.docker.internal:9090
+```
+
+### Static Host Mapping
+Add to `docker-compose.yml`:
+```yaml
+extra_hosts:
+  - "graylog.internal:192.168.1.100"
+```
+
 ## Troubleshooting
 
-**Can't reach datasources**: Docker has its own network. Use actual IPs or hostnames resolvable from the container. For services on the host machine, use `host.docker.internal` (Docker Desktop) or `--network host` (Linux).
+**Can't reach datasources**: Docker has its own network. Use actual IPs or `host.docker.internal`.
 
-**Debug mode**: Set `LOG_LEVEL=debug` in `.env` and restart.
+**Debug mode**: Set `LOG_LEVEL=debug` in `.env`.
 
-**Health check failing**: Check `docker compose logs` for errors.
+**View logs**: `docker compose logs -f`
