@@ -1,0 +1,58 @@
+# Auto detect text files and normalize line endings to LF
+* text=auto eol=lf
+
+# Python
+*.py text diff=python
+*.pyi text diff=python
+*.pyw text diff=python
+
+# Config files
+*.yaml text
+*.yml text
+*.toml text
+*.json text
+*.ini text
+*.cfg text
+*.conf text
+
+# Shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Windows scripts (keep CRLF)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Docker
+Dockerfile text
+.dockerignore text
+
+# Documentation
+*.md text diff=markdown
+*.txt text
+*.rst text
+
+# Data formats
+*.csv text
+*.tsv text
+*.xml text
+
+# Env files
+.env* text
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.whl binary
+
+# Git/CI
+.gitignore text
+.gitattributes text
