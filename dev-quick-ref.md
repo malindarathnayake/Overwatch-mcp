@@ -97,18 +97,18 @@ docker-compose up -d --build
 
 ```bash
 # Tag for GitHub Container Registry
-docker tag overwatch-mcp:latest ghcr.io/ftsgps/overwatch-mcp:latest
-docker tag overwatch-mcp:latest ghcr.io/ftsgps/overwatch-mcp:1.0.0
+docker tag overwatch-mcp:latest ghcr.io/malindarathnayake/Overwatch-mcp:latest
+docker tag overwatch-mcp:latest ghcr.io/malindarathnayake/Overwatch-mcp:1.0.0
 
 # Login to GitHub Container Registry
 echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
 # Push to registry
-docker push ghcr.io/ftsgps/overwatch-mcp:latest
-docker push ghcr.io/ftsgps/overwatch-mcp:1.0.0
+docker push ghcr.io/malindarathnayake/Overwatch-mcp:latest
+docker push ghcr.io/malindarathnayake/Overwatch-mcp:1.0.0
 
 # Pull from registry
-docker pull ghcr.io/ftsgps/overwatch-mcp:latest
+docker pull ghcr.io/malindarathnayake/Overwatch-mcp:latest
 ```
 
 ## Development Workflow
@@ -230,7 +230,7 @@ python -c "from overwatch_mcp.config import load_config; load_config('config/con
 
 ```bash
 # 1. Pull latest image
-docker pull ghcr.io/ftsgps/overwatch-mcp:latest
+docker pull ghcr.io/malindarathnayake/Overwatch-mcp:latest
 
 # 2. Create config directory
 mkdir -p ~/overwatch-mcp/config
@@ -254,7 +254,7 @@ docker run -d \
   --restart unless-stopped \
   -v ~/overwatch-mcp/config:/app/config:ro \
   --env-file ~/overwatch-mcp/.env \
-  ghcr.io/ftsgps/overwatch-mcp:latest
+  ghcr.io/malindarathnayake/Overwatch-mcp:latest
 ```
 
 ## Troubleshooting
@@ -364,8 +364,8 @@ docker cp overwatch-mcp:/app/logs ./logs
 ## CI/CD Pipeline Status
 
 Check pipeline status:
-- GitHub Actions: https://github.com/ftsgps/overwatch-mcp/actions
-- Container Registry: https://github.com/ftsgps/overwatch-mcp/pkgs/container/overwatch-mcp
+- GitHub Actions: https://github.com/malindarathnayake/Overwatch-mcp/actions
+- Container Registry: https://github.com/malindarathnayake/Overwatch-mcp/pkgs/container/overwatch-mcp
 
 ## Version Management
 
