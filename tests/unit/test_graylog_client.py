@@ -165,9 +165,8 @@ class TestGraylogClient:
         self, graylog_client: GraylogClient, httpx_mock: HTTPXMock
     ):
         """Test health check when service is down."""
-        # Add multiple responses for retries (initial + 3 retries)
-        for _ in range(4):
-            httpx_mock.add_response(status_code=503)
+        # Health check uses direct client.get() without retries
+        httpx_mock.add_response(status_code=503)
 
         async with graylog_client:
             result = await graylog_client.health_check()
