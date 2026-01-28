@@ -197,6 +197,66 @@ gh run view RUN_ID
 gh run download RUN_ID
 ```
 
+## Windows Claude Desktop Setup
+
+### One-Shot Setup Script
+
+```powershell
+# Stop Claude if running
+Get-Process -Name "Claude*" -ErrorAction SilentlyContinue | Stop-Process -Force
+
+$config = @'
+{
+  "mcpServers": {
+    "overwatch": {
+      "command": "C:/Users/<USERNAME>/AppData/Local/Microsoft/WindowsApps/python3.13.exe",
+      "args": ["-m", "overwatch_mcp", "--config", "C:/path/to/Overwatch-mcp/compose/config.yaml"],
+      "env": {
+        "GRAYLOG_URL": "https://<YOUR_GRAYLOG_URL>",
+        "GRAYLOG_TOKEN": "<YOUR_GRAYLOG_TOKEN>",
+        "GRAYLOG_KNOWN_APPS_FILE": "C:/path/to/Overwatch-mcp/known_applications.json",
+        "PROMETHEUS_URL": "http://<YOUR_PROMETHEUS_URL>:9090",
+        "INFLUXDB_URL": "https://<YOUR_INFLUXDB_URL>",
+        "INFLUXDB_TOKEN": "<YOUR_INFLUXDB_TOKEN>",
+        "INFLUXDB_ORG": "<YOUR_INFLUXDB_ORG>",
+        "LOG_LEVEL": "debug",
+        "LOG_FILE": "C:/path/to/Overwatch-mcp/overwatch.log"
+      }
+    }
+  }
+}
+'@
+[System.IO.File]::WriteAllText("$env:APPDATA\Claude\claude_desktop_config.json", $config)
+
+# Install from source (run from repo root)
+cd C:\path\to\Overwatch-mcp
+pip install -e .
+```
+
+### Generate Known Applications (for auto prod filter)
+
+```powershell
+# Discover applications from Graylog
+python scripts/discover_applications.py `
+  --url https://<YOUR_GRAYLOG_URL> `
+  --token <YOUR_GRAYLOG_TOKEN> `
+  --output known_applications.json
+
+# Or use env vars if set
+$env:GRAYLOG_URL = "https://<YOUR_GRAYLOG_URL>"
+$env:GRAYLOG_TOKEN = "<YOUR_GRAYLOG_TOKEN>"
+python scripts/discover_applications.py --env
+```
+
+### Restart After Config Changes
+
+```powershell
+# No rebuild needed for Python/config changes (editable install)
+# Just restart Claude Desktop
+Get-Process -Name "Claude*" -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Process "$env:LOCALAPPDATA\Programs\Claude\Claude.exe"
+```
+
 ## Configuration Management
 
 ### Environment Variables
@@ -205,6 +265,7 @@ Required variables:
 ```bash
 GRAYLOG_URL=https://graylog.internal:9000/api
 GRAYLOG_TOKEN=your-graylog-token
+GRAYLOG_KNOWN_APPS_FILE=/path/to/known_applications.json  # Optional, enables auto prod filter
 PROMETHEUS_URL=http://prometheus.internal:9090
 INFLUXDB_URL=https://influxdb.internal:8086
 INFLUXDB_TOKEN=your-influxdb-token

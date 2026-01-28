@@ -20,25 +20,41 @@ def substitute_env_vars(data: Any) -> Any:
     """
     Recursively substitute ${VAR} patterns with environment variables.
 
-    Raises ConfigError if a referenced environment variable is not set.
+    Supports:
+    - ${VAR} - required, raises error if not set
+    - ${VAR:-} - optional, uses empty string if not set
+    - ${VAR:-default} - uses "default" if not set
+
+    Raises ConfigError if a required environment variable is not set.
     """
     if isinstance(data, dict):
         return {key: substitute_env_vars(value) for key, value in data.items()}
     elif isinstance(data, list):
         return [substitute_env_vars(item) for item in data]
     elif isinstance(data, str):
-        # Find all ${VAR} patterns
+        # Find all ${VAR} or ${VAR:-default} patterns
         pattern = r'\$\{([^}]+)\}'
         matches = re.findall(pattern, data)
 
         result = data
-        for var_name in matches:
-            env_value = os.environ.get(var_name)
-            if env_value is None:
-                raise ConfigError(
-                    f"Environment variable '{var_name}' is required but not set"
-                )
-            result = result.replace(f"${{{var_name}}}", env_value)
+        for match in matches:
+            # Parse VAR:-default syntax
+            if ":-" in match:
+                var_name, default_value = match.split(":-", 1)
+                env_value = os.environ.get(var_name, default_value)
+            else:
+                var_name = match
+                env_value = os.environ.get(var_name)
+                if env_value is None:
+                    raise ConfigError(
+                        f"Environment variable '{var_name}' is required but not set"
+                    )
+            
+            result = result.replace(f"${{{match}}}", env_value)
+
+        # Return None for empty optional values (allows Pydantic to use defaults)
+        if result == "":
+            return None
 
         return result
     else:

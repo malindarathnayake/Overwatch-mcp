@@ -66,6 +66,12 @@ dmypy.json
 config/config.yaml
 config/*.yaml
 !config/config.example.yaml
+compose/config.yaml
+!compose/config.example.yaml
+
+# Generated application discovery files
+known_applications.json
+**/known_applications.json
 
 # Logs
 *.log

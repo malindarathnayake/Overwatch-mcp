@@ -102,6 +102,43 @@ python -m overwatch_mcp
 }
 ```
 
+### Windows PowerShell Setup
+
+One-shot script to configure Claude Desktop on Windows:
+
+```powershell
+# Stop Claude if running
+Get-Process -Name "Claude*" -ErrorAction SilentlyContinue | Stop-Process -Force
+
+$config = @'
+{
+  "mcpServers": {
+    "overwatch": {
+      "command": "C:/Users/<USERNAME>/AppData/Local/Microsoft/WindowsApps/python3.13.exe",
+      "args": ["-m", "overwatch_mcp", "--config", "C:/path/to/Overwatch-mcp/compose/config.yaml"],
+      "env": {
+        "GRAYLOG_URL": "https://your-graylog-url",
+        "GRAYLOG_TOKEN": "<YOUR_GRAYLOG_TOKEN>",
+        "PROMETHEUS_URL": "http://your-prometheus-url:9090",
+        "INFLUXDB_URL": "https://your-influxdb-url",
+        "INFLUXDB_TOKEN": "<YOUR_INFLUXDB_TOKEN>",
+        "INFLUXDB_ORG": "<YOUR_INFLUXDB_ORG>",
+        "LOG_LEVEL": "debug",
+        "LOG_FILE": "C:/path/to/Overwatch-mcp/overwatch.log"
+      }
+    }
+  }
+}
+'@
+[System.IO.File]::WriteAllText("$env:APPDATA\Claude\claude_desktop_config.json", $config)
+
+# Install from source (run from repo root)
+cd C:\path\to\Overwatch-mcp
+pip install -e .
+```
+
+**Note**: Replace `<USERNAME>`, `<YOUR_GRAYLOG_TOKEN>`, `<YOUR_INFLUXDB_TOKEN>`, `<YOUR_INFLUXDB_ORG>`, and paths with your actual values.
+
 ## Configuration
 
 ### config.yaml
@@ -120,6 +157,12 @@ datasources:
     timeout_seconds: 30
     max_time_range_hours: 24
     max_results: 1000
+    # Production environments to filter on (auto-builds from known_applications.json)
+    production_environments:
+      - "prod"
+      - "production"
+    # Known apps file - auto-builds env filter from discovered data
+    known_applications_file: "${GRAYLOG_KNOWN_APPS_FILE:-}"
 
   prometheus:
     enabled: true
@@ -225,6 +268,52 @@ Bucket must be in `allowed_buckets` config.
 | `UPSTREAM_CLIENT_ERROR` | 4xx from datasource |
 | `UPSTREAM_SERVER_ERROR` | 5xx from datasource |
 
+## Application Discovery
+
+Generate a known applications file to speed up lookups:
+
+```bash
+# Using environment variables
+python scripts/discover_applications.py --env
+
+# Or with explicit credentials
+python scripts/discover_applications.py \
+  --url https://graylog.example.com \
+  --token YOUR_TOKEN \
+  --hours 24 \
+  --environment "environment:prod" \
+  --output known_applications.json
+```
+
+Output `known_applications.json`:
+
+```json
+{
+  "_metadata": {
+    "generated_at": "2025-01-28T10:00:00",
+    "identifier_fields_used": ["application", "service", "container_name"]
+  },
+  "environments": ["prod", "staging", "dev"],
+  "applications": [
+    {
+      "name": "api-gateway",
+      "identifier_fields": ["service", "application"],
+      "aliases": [],
+      "description": "",
+      "team": "",
+      "enabled": true
+    }
+  ]
+}
+```
+
+Edit the file to:
+- Remove entries you don't need (`enabled: false`)
+- Add descriptions and team ownership
+- Add aliases for alternative names
+
+Then set `GRAYLOG_KNOWN_APPS_FILE=/path/to/known_applications.json` in your environment.
+
 ## Development
 
 ```bash
@@ -252,6 +341,15 @@ src/overwatch_mcp/
 ```
 
 127 tests (89 unit, 38 integration).
+
+## Usage Guide
+
+See [Docs/usage-guide.md](Docs/usage-guide.md) for examples of how to ask questions:
+
+- Finding errors and investigating issues
+- Searching logs with filters and time ranges
+- Querying metrics and trends
+- Investigation workflows and common patterns
 
 ## Troubleshooting
 

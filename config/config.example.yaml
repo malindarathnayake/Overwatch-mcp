@@ -18,6 +18,15 @@ datasources:
     default_time_range_hours: 1     # Default if not specified
     max_results: 1000               # Hard cap on returned messages
     default_results: 100            # Default limit
+    # Production environment names to filter on (auto-builds filter from known_applications.json)
+    production_environments:
+      - "prod"
+      - "production"
+    # Known applications file - auto-builds environment filter from discovered data
+    # Generate with: python scripts/discover_applications.py --env
+    known_applications_file: "${GRAYLOG_KNOWN_APPS_FILE:-}"
+    # Manual filter (only used if known_applications_file not set)
+    # default_query_filter: "environment:(prod OR production)"
 
   prometheus:
     enabled: true

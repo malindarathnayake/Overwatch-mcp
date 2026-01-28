@@ -26,8 +26,12 @@ class GraylogClient(BaseHTTPClient):
         if url.endswith("/api"):
             url = url[:-4]
         
+        # Graylog uses Basic auth with token:token format
+        import base64
+        auth_string = f"{config.token}:token"
+        auth_bytes = base64.b64encode(auth_string.encode()).decode()
         headers = {
-            "Authorization": f"Bearer {config.token}",
+            "Authorization": f"Basic {auth_bytes}",
             "Accept": "application/json",
         }
         super().__init__(
@@ -37,6 +41,27 @@ class GraylogClient(BaseHTTPClient):
             verify_ssl=config.verify_ssl,
         )
         self.config = config
+
+    def _parse_relative_to_seconds(self, time_str: str) -> int:
+        """
+        Convert relative time string to seconds.
+        
+        Args:
+            time_str: Relative time like '-1h', '-30m', '-5m'
+            
+        Returns:
+            Number of seconds
+        """
+        import re
+        match = re.match(r'^-?(\d+)([smhd])$', time_str)
+        if not match:
+            return 3600  # Default 1 hour
+        
+        value = int(match.group(1))
+        unit = match.group(2)
+        
+        multipliers = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
+        return value * multipliers.get(unit, 3600)
 
     def _parse_time(self, time_str: str) -> str | int:
         """
@@ -109,7 +134,8 @@ class GraylogClient(BaseHTTPClient):
         # Choose endpoint based on time format
         if use_relative:
             endpoint = "/api/search/universal/relative"
-            params["range"] = parsed_from  # e.g., "-1h"
+            # Graylog expects range as integer seconds, not string
+            params["range"] = self._parse_relative_to_seconds(parsed_from)
         else:
             endpoint = "/api/search/universal/absolute"
             params["from"] = parsed_from

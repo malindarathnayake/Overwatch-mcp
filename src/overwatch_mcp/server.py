@@ -162,20 +162,32 @@ class OverwatchMCPServer:
 
     async def _list_graylog_tools(self) -> list[Tool]:
         """List available Graylog tools."""
+        # Build description with default filter and analysis guidance
+        desc = (
+            "Search Graylog logs. Defaults to production environment. "
+            "When analyzing results: 1) Focus on ERROR/WARN levels first, "
+            "2) Group by source/service to find patterns, "
+            "3) Check timestamps for clustering. "
+            "Common queries: level:ERROR, source:appname, message:*exception*"
+        )
+        default_filter = self.config.datasources.graylog.default_query_filter
+        if default_filter:
+            desc += f" [Auto-filter: {default_filter}]"
+
         return [
             Tool(
                 name="graylog_search",
-                description="Search Graylog logs with query string and time range",
+                description=desc,
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "Graylog search query (Lucene syntax)"
+                            "description": "Lucene query. Examples: level:ERROR, source:api-*, message:timeout. Note: avoid leading wildcards (*text) - use trailing (text*) instead"
                         },
                         "from_time": {
                             "type": "string",
-                            "description": "Start time (ISO8601 or relative: '-1h', '-30m'). Default: '-1h'",
+                            "description": "Start time (ISO8601 or relative: '-1h', '-30m', '-6h'). Default: '-1h'",
                             "default": "-1h"
                         },
                         "to_time": {
@@ -185,13 +197,18 @@ class OverwatchMCPServer:
                         },
                         "limit": {
                             "type": "integer",
-                            "description": "Max results. Default: 100, Max: 1000",
+                            "description": "Max results. Start with 50-100 for overview, increase if needed. Max: 1000",
                             "default": 100
                         },
                         "fields": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "Fields to return. Default: all"
+                            "description": "Fields to return. Recommended: ['timestamp', 'level', 'source', 'message'] for overview"
+                        },
+                        "include_env_filter": {
+                            "type": "boolean",
+                            "description": "Apply production filter. Set false to search all environments",
+                            "default": True
                         }
                     },
                     "required": ["query"]
@@ -199,17 +216,17 @@ class OverwatchMCPServer:
             ),
             Tool(
                 name="graylog_fields",
-                description="List available fields in Graylog logs, optionally filtered by pattern",
+                description="List available log fields. Use to discover filterable fields before searching. Common patterns: http_*, error_*, kubernetes_*",
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "pattern": {
                             "type": "string",
-                            "description": "Regex pattern to filter field names (e.g., 'http_.*', 'error')"
+                            "description": "Regex to filter fields. Examples: 'http_.*', 'error', 'kubernetes_.*'"
                         },
                         "limit": {
                             "type": "integer",
-                            "description": "Max fields to return. Default: 100, Max: 500",
+                            "description": "Max fields to return. Default: 100",
                             "default": 100
                         }
                     }
@@ -237,6 +254,7 @@ class OverwatchMCPServer:
                     to_time=arguments.get("to_time", "now"),
                     limit=arguments.get("limit"),
                     fields=arguments.get("fields"),
+                    include_env_filter=arguments.get("include_env_filter", True),
                 )
             elif name == "graylog_fields":
                 result = await graylog.graylog_fields(
@@ -254,7 +272,15 @@ class OverwatchMCPServer:
 
         except OverwatchError as e:
             logger.error(f"Tool error: {e.message}", exc_info=True)
-            return [TextContent(type="text", text=f"Error: {e.message}")]
+            error_msg = e.message
+            
+            # Add helpful hints for common issues
+            if "server error" in error_msg.lower() and e.details:
+                query = arguments.get("query", "")
+                if "*" in query and re.search(r':\*[^*\s]+', query):
+                    error_msg += ". HINT: Leading wildcards (*text) often fail in Graylog. Try trailing wildcards (text*) or exact matches instead."
+            
+            return [TextContent(type="text", text=f"Error: {error_msg}")]
         except Exception as e:
             logger.error(f"Unexpected error: {str(e)}", exc_info=True)
             return [TextContent(type="text", text=f"Unexpected error: {str(e)}")]
@@ -264,17 +290,21 @@ class OverwatchMCPServer:
         return [
             Tool(
                 name="prometheus_query",
-                description="Execute instant PromQL query",
+                description=(
+                    "Execute instant PromQL query for current metric values. "
+                    "Use for: current state, up/down checks, latest values. "
+                    "Common: up, rate(metric[5m]), sum by (label)(metric)"
+                ),
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "PromQL expression"
+                            "description": "PromQL expression. Examples: up, rate(http_requests_total[5m]), sum by (job)(process_cpu_seconds_total)"
                         },
                         "time": {
                             "type": "string",
-                            "description": "Evaluation time (ISO8601, Unix, or relative). Default: now"
+                            "description": "Evaluation time (ISO8601, Unix, or relative: '-5m'). Default: now"
                         }
                     },
                     "required": ["query"]
@@ -282,25 +312,29 @@ class OverwatchMCPServer:
             ),
             Tool(
                 name="prometheus_query_range",
-                description="Execute PromQL range query",
+                description=(
+                    "Execute PromQL range query for time series data. "
+                    "Use for: trends, graphs, historical analysis. "
+                    "Analyze: look for spikes, drops, or gradual changes"
+                ),
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "PromQL expression"
+                            "description": "PromQL expression. Examples: rate(http_requests_total[5m]), histogram_quantile(0.95, rate(http_duration_seconds_bucket[5m]))"
                         },
                         "start": {
                             "type": "string",
-                            "description": "Start time (ISO8601, Unix, or relative: '-1h')"
+                            "description": "Start time. Use '-1h' for last hour, '-6h' for 6 hours, '-1d' for day"
                         },
                         "end": {
                             "type": "string",
-                            "description": "End time (ISO8601, Unix, or relative: 'now')"
+                            "description": "End time. Usually 'now'"
                         },
                         "step": {
                             "type": "string",
-                            "description": "Query resolution (e.g., '15s', '1m', '1h'). Auto-calculated if not provided"
+                            "description": "Resolution. '1m' for detailed, '5m' for overview, '1h' for long ranges. Auto-calculated if omitted"
                         }
                     },
                     "required": ["query", "start", "end"]
@@ -308,17 +342,17 @@ class OverwatchMCPServer:
             ),
             Tool(
                 name="prometheus_metrics",
-                description="List available metric names, optionally filtered by pattern",
+                description="List available metrics. Use to discover what's available before querying. Common prefixes: http_, process_, node_, container_",
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "pattern": {
                             "type": "string",
-                            "description": "Regex pattern to filter metric names (e.g., 'http_.*', 'cpu')"
+                            "description": "Regex to filter. Examples: 'http_.*', 'cpu', 'memory', 'request'"
                         },
                         "limit": {
                             "type": "integer",
-                            "description": "Max metrics to return. Default: 100, Max: 500",
+                            "description": "Max results. Default: 100",
                             "default": 100
                         }
                     }
@@ -377,20 +411,31 @@ class OverwatchMCPServer:
 
     async def _list_influxdb_tools(self) -> list[Tool]:
         """List available InfluxDB tools."""
+        # Build allowed buckets info
+        allowed = self.config.datasources.influxdb.allowed_buckets if self.config.datasources.influxdb else []
+        bucket_info = f" Allowed buckets: {', '.join(allowed)}" if allowed else ""
+
         return [
             Tool(
                 name="influxdb_query",
-                description="Execute Flux query against InfluxDB 2.x",
+                description=(
+                    f"Execute Flux query against InfluxDB 2.x.{bucket_info} "
+                    "Structure: from(bucket) |> range(start) |> filter(fn: (r) => condition) |> aggregateWindow(). "
+                    "Analyze: look for trends, anomalies, compare time periods"
+                ),
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "Flux query"
+                            "description": (
+                                "Flux query. Example: from(bucket:\"telegraf\") |> range(start:-1h) "
+                                "|> filter(fn:(r) => r._measurement==\"cpu\") |> mean()"
+                            )
                         },
                         "bucket": {
                             "type": "string",
-                            "description": "Target bucket (must be in allowed_buckets)"
+                            "description": f"Target bucket. Must be one of: {', '.join(allowed)}" if allowed else "Target bucket"
                         }
                     },
                     "required": ["query", "bucket"]
@@ -534,10 +579,29 @@ async def main(
     """
     # Set up logging - use LOG_LEVEL env var (default: info)
     log_level = os.environ.get("LOG_LEVEL", "info").upper()
-    logging.basicConfig(
-        level=getattr(logging, log_level, logging.INFO),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(getattr(logging, log_level, logging.INFO))
+    
+    # Always add stderr handler
+    stderr_handler = logging.StreamHandler()
+    stderr_handler.setFormatter(logging.Formatter(log_format))
+    root_logger.addHandler(stderr_handler)
+    
+    # Add file handler if LOG_FILE env var is set
+    log_file = os.environ.get("LOG_FILE")
+    if log_file:
+        from logging.handlers import RotatingFileHandler
+        file_handler = RotatingFileHandler(
+            log_file,
+            maxBytes=10*1024*1024,  # 10MB
+            backupCount=3
+        )
+        file_handler.setFormatter(logging.Formatter(log_format))
+        root_logger.addHandler(file_handler)
+        logger.info(f"Logging to file: {log_file}")
 
     try:
         # Load configuration

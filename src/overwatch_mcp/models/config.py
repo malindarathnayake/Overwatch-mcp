@@ -28,6 +28,25 @@ class GraylogConfig(BaseModel):
     max_results: int = Field(default=1000, ge=1, le=10000)
     default_results: int = Field(default=100, ge=1)
 
+    # Default query filter (e.g., "environment:prod" to focus on production)
+    # If known_applications_file is set, this is auto-built from discovered environments
+    default_query_filter: str | None = Field(
+        default=None,
+        description="Default filter prepended to queries. Auto-built if known_applications_file is set."
+    )
+
+    # Production environment names to filter on (used with known_applications_file)
+    production_environments: list[str] = Field(
+        default_factory=lambda: ["prod", "production", "Prod", "Production"],
+        description="Environment values considered 'production' for default filtering"
+    )
+
+    # Known applications file for faster lookups and auto-filter building
+    known_applications_file: str | None = Field(
+        default=None,
+        description="Path to JSON file with known application identities"
+    )
+
     @field_validator("default_time_range_hours")
     @classmethod
     def validate_default_range(cls, v: int, info) -> int:
