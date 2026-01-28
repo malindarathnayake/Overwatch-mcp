@@ -16,7 +16,7 @@ def sample_config_dict() -> dict:
         "datasources": {
             "graylog": {
                 "enabled": True,
-                "url": "https://graylog.internal:9000/api",
+                "url": "https://graylog.internal:9000",
                 "token": "test-token-123",
                 "timeout_seconds": 30,
                 "max_time_range_hours": 24,
@@ -66,7 +66,7 @@ def minimal_config_dict() -> dict:
         "datasources": {
             "graylog": {
                 "enabled": True,
-                "url": "https://graylog.test:9000/api",
+                "url": "https://graylog.test:9000",
                 "token": "test-token"
             }
         }

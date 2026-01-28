@@ -9,7 +9,7 @@ server:
 datasources:
   graylog:
     enabled: true
-    url: "${GRAYLOG_URL}"           # e.g., https://graylog.internal:9000/api
+    url: "${GRAYLOG_URL}"           # e.g., https://graylog.internal:9000 (no /api suffix)
     token: "${GRAYLOG_TOKEN}"       # API token
     timeout_seconds: 30
     # Query safety limits

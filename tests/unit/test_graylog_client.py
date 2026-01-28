@@ -12,7 +12,7 @@ from overwatch_mcp.models.errors import ErrorCode, OverwatchError
 def graylog_config() -> GraylogConfig:
     """Graylog test configuration."""
     return GraylogConfig(
-        url="https://graylog.test:9000/api",
+        url="https://graylog.test:9000",
         token="test-token-123",
         timeout_seconds=30,
         max_results=1000,
@@ -30,7 +30,7 @@ class TestGraylogClient:
 
     async def test_client_initialization(self, graylog_client: GraylogClient):
         """Test client initializes with correct config."""
-        assert graylog_client.base_url == "https://graylog.test:9000/api"
+        assert graylog_client.base_url == "https://graylog.test:9000"
         assert graylog_client.timeout_seconds == 30
         assert "Authorization" in graylog_client.default_headers
         assert graylog_client.default_headers["Authorization"] == "Bearer test-token-123"

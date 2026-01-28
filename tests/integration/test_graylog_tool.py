@@ -14,7 +14,7 @@ from overwatch_mcp.tools.graylog import graylog_fields, graylog_search
 def graylog_config() -> GraylogConfig:
     """Graylog test configuration."""
     return GraylogConfig(
-        url="https://graylog.test:9000/api",
+        url="https://graylog.test:9000",
         token="test-token-123",
         timeout_seconds=30,
         max_time_range_hours=24,
@@ -49,7 +49,7 @@ class TestGraylogSearch:
         """Test basic search functionality."""
         # Mock API response
         httpx_mock.add_response(
-            url="https://graylog.test:9000/api/api/search/universal/relative?query=level%3AERROR&limit=100&range=-1h",
+            url="https://graylog.test:9000/api/search/universal/relative?query=level%3AERROR&limit=100&range=-1h",
             json={
                 "messages": [
                     {
@@ -90,7 +90,7 @@ class TestGraylogSearch:
     ):
         """Test search with specific fields."""
         httpx_mock.add_response(
-            url="https://graylog.test:9000/api/api/search/universal/relative?query=service%3Aapi&limit=50&fields=timestamp%2Clevel%2Cmessage&range=-30m",
+            url="https://graylog.test:9000/api/search/universal/relative?query=service%3Aapi&limit=50&fields=timestamp%2Clevel%2Cmessage&range=-30m",
             json={
                 "messages": [
                     {
@@ -126,7 +126,7 @@ class TestGraylogSearch:
         """Test search with truncated results."""
         # Mock more results than returned
         httpx_mock.add_response(
-            url="https://graylog.test:9000/api/api/search/universal/relative?query=*&limit=10&range=-1h",
+            url="https://graylog.test:9000/api/search/universal/relative?query=*&limit=10&range=-1h",
             json={
                 "messages": [{"message": f"log {i}"} for i in range(10)],
                 "total_results": 1000,
@@ -155,7 +155,7 @@ class TestGraylogSearch:
         """Test that limit is clamped to max_results."""
         # Request should be clamped to 1000 (config.max_results)
         httpx_mock.add_response(
-            url="https://graylog.test:9000/api/api/search/universal/relative?query=*&limit=1000&range=-1h",
+            url="https://graylog.test:9000/api/search/universal/relative?query=*&limit=1000&range=-1h",
             json={
                 "messages": [],
                 "total_results": 0,
@@ -243,7 +243,7 @@ class TestGraylogFields:
     ):
         """Test listing all fields without filter."""
         httpx_mock.add_response(
-            url="https://graylog.test:9000/api/api/system/fields",
+            url="https://graylog.test:9000/api/system/fields",
             json={
                 "fields": {
                     "http_method": "string",
@@ -280,7 +280,7 @@ class TestGraylogFields:
     ):
         """Test filtering fields by pattern."""
         httpx_mock.add_response(
-            url="https://graylog.test:9000/api/api/system/fields",
+            url="https://graylog.test:9000/api/system/fields",
             json={
                 "fields": {
                     "http_method": "string",
@@ -316,7 +316,7 @@ class TestGraylogFields:
     ):
         """Test that pattern matching is case-insensitive."""
         httpx_mock.add_response(
-            url="https://graylog.test:9000/api/api/system/fields",
+            url="https://graylog.test:9000/api/system/fields",
             json={
                 "fields": {
                     "HTTP_Method": "string",
@@ -348,7 +348,7 @@ class TestGraylogFields:
         """Test limiting number of returned fields."""
         fields_data = {f"field_{i}": "string" for i in range(50)}
         httpx_mock.add_response(
-            url="https://graylog.test:9000/api/api/system/fields",
+            url="https://graylog.test:9000/api/system/fields",
             json={"fields": fields_data}
         )
 
@@ -372,7 +372,7 @@ class TestGraylogFields:
     ):
         """Test that field list is cached."""
         httpx_mock.add_response(
-            url="https://graylog.test:9000/api/api/system/fields",
+            url="https://graylog.test:9000/api/system/fields",
             json={
                 "fields": {
                     "field1": "string",
