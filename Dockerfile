@@ -42,6 +42,6 @@ ENTRYPOINT ["python", "-m", "overwatch_mcp"]
 CMD ["--config", "/app/config/config.yaml"]
 
 # Metadata
-LABEL maintainer="your.email@example.com" \
+LABEL maintainer="malinda@rathnayake.net" \
       description="MCP server for Graylog, Prometheus, and InfluxDB observability" \
       version="1.0.0"
