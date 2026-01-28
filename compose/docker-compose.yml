@@ -19,6 +19,9 @@ services:
       - .env
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-info}
+    # Uncomment and change HOST port if needed (format: HOST:CONTAINER)
+    # ports:
+    #   - "8081:8080"
     # Uncomment for host network access (Linux only)
     # network_mode: host
     
