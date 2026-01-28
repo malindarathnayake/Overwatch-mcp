@@ -20,6 +20,10 @@ from overwatch_mcp.tools import graylog, influxdb, prometheus
 
 logger = logging.getLogger(__name__)
 
+# Transport mode constants
+TRANSPORT_STDIO = "stdio"
+TRANSPORT_SSE = "sse"
+
 
 class OverwatchMCPServer:
     """MCP server for observability datasources."""
@@ -425,11 +429,25 @@ class OverwatchMCPServer:
             logger.error(f"Unexpected error: {str(e)}", exc_info=True)
             return [TextContent(type="text", text=f"Unexpected error: {str(e)}")]
 
-    async def run(self) -> None:
-        """Run the MCP server."""
+    async def run(self, transport: str = TRANSPORT_STDIO, host: str = "0.0.0.0", port: int = 8080) -> None:
+        """
+        Run the MCP server.
+        
+        Args:
+            transport: Transport mode ('stdio' or 'sse')
+            host: Host to bind for SSE mode
+            port: Port to bind for SSE mode
+        """
         await self.initialize_clients()
         self.register_tools()
 
+        if transport == TRANSPORT_SSE:
+            await self._run_sse(host, port)
+        else:
+            await self._run_stdio()
+
+    async def _run_stdio(self) -> None:
+        """Run server with stdio transport."""
         logger.info("Starting MCP server on stdio...")
         async with stdio_server() as (read_stream, write_stream):
             await self.server.run(
@@ -438,13 +456,81 @@ class OverwatchMCPServer:
                 self.server.create_initialization_options()
             )
 
+    async def _run_sse(self, host: str, port: int) -> None:
+        """Run server with SSE transport over HTTP."""
+        from starlette.applications import Starlette
+        from starlette.routing import Route, Mount
+        from starlette.responses import JSONResponse
+        from mcp.server.sse import SseServerTransport
+        import uvicorn
 
-async def main(config_path: str = "config/config.yaml") -> None:
+        # Create SSE transport
+        sse_transport = SseServerTransport("/messages/")
+
+        async def handle_sse(request):
+            """Handle SSE connection."""
+            async with sse_transport.connect_sse(
+                request.scope, request.receive, request._send
+            ) as streams:
+                await self.server.run(
+                    streams[0],
+                    streams[1],
+                    self.server.create_initialization_options()
+                )
+
+        async def handle_messages(request):
+            """Handle incoming messages."""
+            await sse_transport.handle_post_message(
+                request.scope, request.receive, request._send
+            )
+
+        async def health_check(request):
+            """Health check endpoint."""
+            return JSONResponse({
+                "status": "healthy",
+                "datasources": self.datasource_available,
+                "transport": "sse"
+            })
+
+        # Create Starlette app
+        app = Starlette(
+            debug=False,
+            routes=[
+                Route("/health", health_check, methods=["GET"]),
+                Route("/sse", handle_sse, methods=["GET"]),
+                Route("/messages/", handle_messages, methods=["POST"]),
+            ]
+        )
+
+        logger.info(f"Starting MCP server on http://{host}:{port}")
+        logger.info(f"  SSE endpoint: http://{host}:{port}/sse")
+        logger.info(f"  Health check: http://{host}:{port}/health")
+
+        config = uvicorn.Config(
+            app,
+            host=host,
+            port=port,
+            log_level="info",
+            access_log=True
+        )
+        server = uvicorn.Server(config)
+        await server.serve()
+
+
+async def main(
+    config_path: str = "config/config.yaml",
+    transport: str = TRANSPORT_STDIO,
+    host: str = "0.0.0.0",
+    port: int = 8080
+) -> None:
     """
     Main entry point for the MCP server.
 
     Args:
         config_path: Path to configuration file
+        transport: Transport mode ('stdio' or 'sse')
+        host: Host to bind for SSE mode
+        port: Port to bind for SSE mode
     """
     # Set up logging - use LOG_LEVEL env var (default: info)
     log_level = os.environ.get("LOG_LEVEL", "info").upper()
@@ -460,7 +546,7 @@ async def main(config_path: str = "config/config.yaml") -> None:
 
         # Create and run server
         server = OverwatchMCPServer(config)
-        await server.run()
+        await server.run(transport=transport, host=host, port=port)
 
     except FileNotFoundError:
         logger.error(f"Configuration file not found: {config_path}")

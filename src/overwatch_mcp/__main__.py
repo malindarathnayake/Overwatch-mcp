@@ -5,7 +5,7 @@ import asyncio
 import logging
 import sys
 
-from overwatch_mcp.server import main
+from overwatch_mcp.server import main, TRANSPORT_STDIO, TRANSPORT_SSE
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,25 @@ def parse_args() -> argparse.Namespace:
         help="Path to configuration file (default: config/config.yaml)",
     )
     parser.add_argument(
+        "--transport",
+        "-t",
+        choices=[TRANSPORT_STDIO, TRANSPORT_SSE],
+        default=TRANSPORT_STDIO,
+        help=f"Transport mode: '{TRANSPORT_STDIO}' for local use, '{TRANSPORT_SSE}' for remote HTTP access (default: {TRANSPORT_STDIO})",
+    )
+    parser.add_argument(
+        "--host",
+        default="0.0.0.0",
+        help="Host to bind for SSE mode (default: 0.0.0.0)",
+    )
+    parser.add_argument(
+        "--port",
+        "-p",
+        type=int,
+        default=8080,
+        help="Port to bind for SSE mode (default: 8080)",
+    )
+    parser.add_argument(
         "--version",
         "-v",
         action="version",
@@ -36,7 +55,12 @@ def main_sync() -> None:
     args = parse_args()
 
     try:
-        asyncio.run(main(config_path=args.config))
+        asyncio.run(main(
+            config_path=args.config,
+            transport=args.transport,
+            host=args.host,
+            port=args.port
+        ))
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
         sys.exit(0)

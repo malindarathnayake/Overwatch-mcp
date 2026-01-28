@@ -33,11 +33,15 @@ USER overwatch
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
+# Expose SSE port (used when running with --transport sse)
+EXPOSE 8080
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD python -c "import sys; sys.exit(0)"
 
 # Default command - can be overridden
+# Use --transport sse --port 8080 for HTTP/SSE mode
 ENTRYPOINT ["python", "-m", "overwatch_mcp"]
 CMD ["--config", "/app/config/config.yaml"]
 
