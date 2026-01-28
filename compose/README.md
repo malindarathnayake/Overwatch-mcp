@@ -2,28 +2,44 @@
 
 Portable compose setup for deploying Overwatch MCP on any host.
 
-## Quick Start
+## One-Line Setup
 
 ```bash
-# 1. Copy this folder to your target host
-scp -r compose/ user@host:~/overwatch-mcp/
+curl -fsSL https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/setup.sh | bash
+cd Overwatch_MCP
+nano .env          # Add your credentials
+nano config.yaml   # Adjust if needed
+docker compose up -d
+```
 
-# 2. On the host, create config files
-cd ~/overwatch-mcp
+## Manual Setup
+
+```bash
+# Download files
+mkdir -p Overwatch_MCP && cd Overwatch_MCP
+curl -fsSLO https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/.env.example
+curl -fsSLO https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/config.example.yaml
+
+# Create config from templates
 cp .env.example .env
 cp config.example.yaml config.yaml
 
-# 3. Edit .env with your credentials
+# Edit with your values
 nano .env
-
-# 4. Edit config.yaml if needed (adjust allowed_buckets, limits, etc.)
 nano config.yaml
 
-# 5. Start the service
+# Start
 docker compose up -d
-
-# 6. Check logs
 docker compose logs -f
+```
+
+## Alternative: Copy from Repo
+
+```bash
+# If you have the repo cloned
+scp -r compose/ user@host:~/Overwatch_MCP/
+ssh user@host "cd ~/Overwatch_MCP && cp .env.example .env && cp config.example.yaml config.yaml"
 ```
 
 ## Files

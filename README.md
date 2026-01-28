@@ -20,25 +20,33 @@ MCP server for querying Graylog, Prometheus, and InfluxDB 2.x from Claude Deskto
 
 ## Quick Start
 
-### Docker
+### One-Line Setup (Docker)
 
 ```bash
-# Get the example config
-mkdir -p config
-curl -o config/config.yaml https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/config/config.example.yaml
+curl -fsSL https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/setup.sh | bash
+cd Overwatch_MCP
+# Edit .env and config.yaml with your values
+docker compose up -d
+```
 
-# Create .env
-cat > .env << 'EOF'
-GRAYLOG_URL=https://graylog.internal:9000/api
-GRAYLOG_TOKEN=your-token
-PROMETHEUS_URL=http://prometheus.internal:9090
-INFLUXDB_URL=https://influxdb.internal:8086
-INFLUXDB_TOKEN=your-token
-INFLUXDB_ORG=your-org
-EOF
+### Manual Setup (Docker)
+
+```bash
+# Download compose files
+mkdir -p Overwatch_MCP && cd Overwatch_MCP
+curl -fsSLO https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/.env.example
+curl -fsSLO https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/config.example.yaml
+
+# Create config from templates
+cp .env.example .env
+cp config.example.yaml config.yaml
+
+# Edit .env with your credentials
+# Edit config.yaml if needed (adjust allowed_buckets, limits, etc.)
 
 # Run
-docker run --rm -v "${PWD}/config:/app/config:ro" --env-file .env ghcr.io/malindarathnayake/Overwatch-mcp:latest
+docker compose up -d
 ```
 
 ### Local Install
