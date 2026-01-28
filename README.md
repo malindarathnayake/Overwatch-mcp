@@ -2,8 +2,8 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fftsgps%2Foverwatch--mcp-blue?logo=docker)](https://ghcr.io/ftsgps/overwatch-mcp)
-[![CI](https://github.com/ftsgps/overwatch-mcp/actions/workflows/docker-build.yml/badge.svg)](https://github.com/ftsgps/overwatch-mcp/actions/workflows/docker-build.yml)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fmalindarathnayake%2Foverwatch--mcp-blue?logo=docker)](https://ghcr.io/malindarathnayake/overwatch-mcp)
+[![CI](https://github.com/malindarathnayake/Overwatch-mcp/actions/workflows/docker-build.yml/badge.svg)](https://github.com/malindarathnayake/Overwatch-mcp/actions/workflows/docker-build.yml)
 
 MCP server for querying Graylog, Prometheus, and InfluxDB 2.x from Claude Desktop.
 
@@ -25,7 +25,7 @@ MCP server for querying Graylog, Prometheus, and InfluxDB 2.x from Claude Deskto
 ```bash
 # Get the example config
 mkdir -p config
-curl -o config/config.yaml https://raw.githubusercontent.com/ftsgps/overwatch-mcp/main/config/config.example.yaml
+curl -o config/config.yaml https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/config/config.example.yaml
 
 # Create .env
 cat > .env << 'EOF'
@@ -38,7 +38,7 @@ INFLUXDB_ORG=your-org
 EOF
 
 # Run
-docker run --rm -v "${PWD}/config:/app/config:ro" --env-file .env ghcr.io/ftsgps/overwatch-mcp:latest
+docker run --rm -v "${PWD}/config:/app/config:ro" --env-file .env ghcr.io/malindarathnayake/Overwatch-mcp:latest
 ```
 
 ### Local Install
@@ -66,7 +66,7 @@ python -m overwatch_mcp
         "run", "--rm", "-i",
         "-v", "/path/to/config:/app/config:ro",
         "--env-file", "/path/to/.env",
-        "ghcr.io/ftsgps/overwatch-mcp:latest"
+        "ghcr.io/malindarathnayake/Overwatch-mcp:latest"
       ]
     }
   }
