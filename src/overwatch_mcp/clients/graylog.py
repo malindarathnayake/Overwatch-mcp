@@ -143,9 +143,15 @@ class GraylogClient(BaseHTTPClient):
         full_url = f"{self.base_url}{endpoint}"
         logger.debug(f"Graylog health check: {full_url}")
         try:
-            response = await self.get(endpoint)
+            # lbstatus returns plain text, so override Accept header
+            client = await self._get_client()
+            response = await client.get(
+                endpoint,
+                headers={"Accept": "text/plain, */*"}
+            )
             logger.debug(f"Graylog health response: {response.status_code} - {response.text[:200]}")
+            # lbstatus returns "ALIVE" when healthy
             return response.status_code == 200
-        except OverwatchError as e:
+        except Exception as e:
             logger.debug(f"Graylog health check failed: {e}")
             return False
