@@ -5,8 +5,8 @@
 #   2. Copy config.example.yaml to config.yaml
 #   3. docker compose up -d
 #
-# For Claude Desktop, run interactively instead:
-#   docker compose run --rm overwatch-mcp
+# For Claude Desktop remote access via SSE:
+#   Configure Claude Desktop with: {"url": "http://<server-ip>:8080/sse"}
 
 services:
   overwatch-mcp:
@@ -19,15 +19,15 @@ services:
       - .env
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-info}
-    # Uncomment and change HOST port if needed (format: HOST:CONTAINER)
-    # ports:
-    #   - "8081:8080"
-    # Uncomment for host network access (Linux only)
-    # network_mode: host
+    # SSE mode - expose HTTP endpoint for remote Claude Desktop access
+    ports:
+      - "8080:8080"
+    # Run in SSE transport mode for HTTP access
+    command: ["--config", "/app/config/config.yaml", "--transport", "sse", "--port", "8080"]
     
-    # Health check
+    # Health check - use the /health endpoint in SSE mode
     healthcheck:
-      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 5s
       retries: 3
