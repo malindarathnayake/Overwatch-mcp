@@ -31,6 +31,7 @@ class PrometheusClient(BaseHTTPClient):
         super().__init__(
             base_url=url,
             timeout_seconds=config.timeout_seconds,
+            verify_ssl=config.verify_ssl,
         )
         self.config = config
 

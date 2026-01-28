@@ -10,6 +10,25 @@ curl -fsSL https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/mai
 
 This creates `Overwatch_MCP/` with all files. Then configure and run manually.
 
+## Upgrade Existing Installation
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/malindarathnayake/Overwatch-mcp/main/compose/setup.sh | bash -s -- --upgrade
+```
+
+This will:
+1. Backup your existing `.env`, `config.yaml`, and `docker-compose.yml` to `backup_YYYYMMDD_HHMMSS/`
+2. Download the latest templates
+3. Keep your existing config files (you merge manually)
+
+After upgrade:
+```bash
+cd Overwatch_MCP
+diff .env .env.example              # Check for new env vars
+diff config.yaml config.example.yaml # Check for new config options
+docker compose down && docker compose pull && docker compose up -d
+```
+
 ## Manual Setup
 
 ```bash

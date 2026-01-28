@@ -12,6 +12,7 @@ datasources:
     url: "${GRAYLOG_URL}"
     token: "${GRAYLOG_TOKEN}"
     timeout_seconds: 30
+    verify_ssl: false               # Set to true if using valid certs
     max_time_range_hours: 24
     default_time_range_hours: 1
     max_results: 1000
@@ -21,6 +22,7 @@ datasources:
     enabled: true
     url: "${PROMETHEUS_URL}"
     timeout_seconds: 30
+    verify_ssl: false               # Set to true if using valid certs
     max_range_hours: 168
     max_step_seconds: 3600
     max_series: 10000
@@ -32,6 +34,7 @@ datasources:
     token: "${INFLUXDB_TOKEN}"
     org: "${INFLUXDB_ORG}"
     timeout_seconds: 60
+    verify_ssl: false               # Set to true if using valid certs
     allowed_buckets:
       - "telegraf"
       - "app_metrics"

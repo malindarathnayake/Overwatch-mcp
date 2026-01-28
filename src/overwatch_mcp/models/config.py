@@ -17,9 +17,10 @@ class GraylogConfig(BaseModel):
     """Graylog datasource configuration."""
 
     enabled: bool = True
-    url: str = Field(..., description="Graylog API URL (e.g., https://graylog.internal:9000/api)")
+    url: str = Field(..., description="Graylog API URL (e.g., https://graylog.internal:9000)")
     token: str = Field(..., description="Graylog API token")
     timeout_seconds: int = Field(default=30, ge=1, le=300)
+    verify_ssl: bool = Field(default=True, description="Verify SSL certificates")
 
     # Query safety limits
     max_time_range_hours: int = Field(default=24, ge=1)
@@ -50,6 +51,7 @@ class PrometheusConfig(BaseModel):
     enabled: bool = True
     url: str = Field(..., description="Prometheus URL (e.g., http://prometheus.internal:9090)")
     timeout_seconds: int = Field(default=30, ge=1, le=300)
+    verify_ssl: bool = Field(default=True, description="Verify SSL certificates")
 
     # Query safety limits
     max_range_hours: int = Field(default=168, ge=1, description="Max 7 days for range queries")
@@ -66,6 +68,7 @@ class InfluxDBConfig(BaseModel):
     token: str = Field(..., description="InfluxDB API token")
     org: str = Field(..., description="InfluxDB organization")
     timeout_seconds: int = Field(default=60, ge=1, le=300)
+    verify_ssl: bool = Field(default=True, description="Verify SSL certificates")
 
     # Bucket allowlist
     allowed_buckets: list[str] = Field(

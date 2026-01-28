@@ -12,6 +12,7 @@ datasources:
     url: "${GRAYLOG_URL}"           # e.g., https://graylog.internal:9000 (no /api suffix)
     token: "${GRAYLOG_TOKEN}"       # API token
     timeout_seconds: 30
+    verify_ssl: true                # Set to false for self-signed certs
     # Query safety limits
     max_time_range_hours: 24        # Max span between from/to
     default_time_range_hours: 1     # Default if not specified
@@ -22,6 +23,7 @@ datasources:
     enabled: true
     url: "${PROMETHEUS_URL}"        # e.g., http://prometheus.internal:9090
     timeout_seconds: 30
+    verify_ssl: true                # Set to false for self-signed certs
     # Query safety limits
     max_range_hours: 168            # 7 days max for range queries
     max_step_seconds: 3600          # Min granularity 1 hour for large ranges
@@ -34,6 +36,7 @@ datasources:
     token: "${INFLUXDB_TOKEN}"
     org: "${INFLUXDB_ORG}"
     timeout_seconds: 60
+    verify_ssl: true                # Set to false for self-signed certs
     # Bucket allowlist - queries to unlisted buckets are rejected
     allowed_buckets:
       - "telegraf"

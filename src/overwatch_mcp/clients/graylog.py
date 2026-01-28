@@ -34,6 +34,7 @@ class GraylogClient(BaseHTTPClient):
             base_url=url,
             timeout_seconds=config.timeout_seconds,
             headers=headers,
+            verify_ssl=config.verify_ssl,
         )
         self.config = config
 

@@ -21,6 +21,7 @@ class BaseHTTPClient:
         timeout_seconds: int = 30,
         max_retries: int = 3,
         headers: dict[str, str] | None = None,
+        verify_ssl: bool = True,
     ):
         """
         Initialize HTTP client.
@@ -30,11 +31,13 @@ class BaseHTTPClient:
             timeout_seconds: Request timeout in seconds
             max_retries: Maximum number of retry attempts for failed requests
             headers: Default headers to include in all requests
+            verify_ssl: Whether to verify SSL certificates
         """
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
         self.default_headers = headers or {}
+        self.verify_ssl = verify_ssl
         self._client: httpx.AsyncClient | None = None
 
     async def __aenter__(self) -> "BaseHTTPClient":
@@ -43,6 +46,7 @@ class BaseHTTPClient:
             base_url=self.base_url,
             timeout=self.timeout_seconds,
             headers=self.default_headers,
+            verify=self.verify_ssl,
         )
         return self
 
@@ -58,6 +62,7 @@ class BaseHTTPClient:
                 base_url=self.base_url,
                 timeout=self.timeout_seconds,
                 headers=self.default_headers,
+                verify=self.verify_ssl,
             )
         return self._client
 
