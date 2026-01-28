@@ -1,0 +1,36 @@
+# Overwatch MCP - Docker Compose
+# 
+# Usage:
+#   1. Copy .env.example to .env and fill in values
+#   2. Copy config.example.yaml to config.yaml
+#   3. docker compose up -d
+#
+# For Claude Desktop, run interactively instead:
+#   docker compose run --rm overwatch-mcp
+
+services:
+  overwatch-mcp:
+    image: ghcr.io/malindarathnayake/overwatch-mcp:latest
+    container_name: overwatch-mcp
+    restart: unless-stopped
+    volumes:
+      - ./config.yaml:/app/config/config.yaml:ro
+    env_file:
+      - .env
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    # Uncomment for host network access (Linux only)
+    # network_mode: host
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# Optional: Add extra_hosts for internal DNS resolution
+# extra_hosts:
+#   - "graylog.internal:192.168.1.100"
+#   - "prometheus.internal:192.168.1.101"

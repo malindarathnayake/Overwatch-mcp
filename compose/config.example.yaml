@@ -1,0 +1,46 @@
+# Overwatch MCP Server Configuration
+# Copy this file to config.yaml
+
+server:
+  name: "overwatch-mcp-server"
+  version: "1.0.0"
+  log_level: "info"
+
+datasources:
+  graylog:
+    enabled: true
+    url: "${GRAYLOG_URL}"
+    token: "${GRAYLOG_TOKEN}"
+    timeout_seconds: 30
+    max_time_range_hours: 24
+    default_time_range_hours: 1
+    max_results: 1000
+    default_results: 100
+
+  prometheus:
+    enabled: true
+    url: "${PROMETHEUS_URL}"
+    timeout_seconds: 30
+    max_range_hours: 168
+    max_step_seconds: 3600
+    max_series: 10000
+    max_metric_results: 500
+
+  influxdb:
+    enabled: true
+    url: "${INFLUXDB_URL}"
+    token: "${INFLUXDB_TOKEN}"
+    org: "${INFLUXDB_ORG}"
+    timeout_seconds: 60
+    allowed_buckets:
+      - "telegraf"
+      - "app_metrics"
+      - "system_metrics"
+    max_time_range_hours: 168
+
+cache:
+  enabled: true
+  default_ttl_seconds: 60
+  ttl_overrides:
+    prometheus_metrics: 300
+    graylog_fields: 300
